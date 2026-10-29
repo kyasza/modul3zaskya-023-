@@ -7,7 +7,7 @@ class BukuController:
     def __init__(self, user_role="anggota"):
         self.user_role = user_role
         self.model = BukuModel()
-        self.view = BukuView()
+        self.view = BukuView(role=self.user_role, on_logout=self.logout)
 
         # Menampilkan informasi role pada judul jendela aplikasi
         self.view.title(f"Sistem Manajemen Perpustakaan - Mode: {self.user_role.upper()}")
@@ -15,12 +15,20 @@ class BukuController:
         # Binding tombol simpan
         self.view.btn_simpan.configure(command=self.simpan_data)
 
+        # TAMBAHAN: Binding tombol Update dan Delete
+        self.view.btn_update.configure(command=self.perbarui_data)
+        self.view.btn_hapus.configure(command=self.hapus_data)
+
         # OTORISASI: Jika bukan admin, nonaktifkan form input dan tombol simpan
         if self.user_role != "admin":
             self.view.btn_simpan.configure(state="disabled", text="Akses Terkunci (Khusus Admin)")
             self.view.entry_judul.configure(state="disabled")
             self.view.entry_penulis.configure(state="disabled")
             self.view.entry_tahun.configure(state="disabled")
+
+            # TAMBAHAN: Mengunci tombol Update dan Delete
+            self.view.btn_update.configure(state="disabled")
+            self.view.btn_hapus.configure(state="disabled")
 
         self.muat_data_tabel()
 
@@ -53,8 +61,31 @@ class BukuController:
             self.muat_data_tabel()
         else:
             messagebox.showerror("Error", "Gagal menyimpan data.")
+    # TAMBAHAN: Fungsi Logout
+    def logout(self):
+        if messagebox.askyesno("Konfirmasi Logout", "Apakah Anda yakin ingin keluar?"):
+            self.view.destroy()
+            from controllers.auth_controller import AuthController
+            app = AuthController()
+            app.run()
+
+    # TAMBAHAN: Fungsi pemeriksaan hak akses Update
+    def perbarui_data(self):
+        if self.user_role != "admin":
+            messagebox.showerror("Akses Ditolak", "Anda tidak memiliki izin untuk memperbarui data!")
+            return
+
+        messagebox.showinfo("Informasi", "Hak akses Update admin diizinkan.")
+
+    # TAMBAHAN: Fungsi pemeriksaan hak akses Delete
+    def hapus_data(self):
+        if self.user_role != "admin":
+            messagebox.showerror("Akses Ditolak", "Anda tidak memiliki izin untuk menghapus data!")
+            return
+
+        messagebox.showinfo("Informasi", "Hak akses Delete admin diizinkan.")
 
     def run(self):
         self.view.mainloop()
+
 # Zaskya (023)
- 

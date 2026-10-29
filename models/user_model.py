@@ -1,5 +1,7 @@
+
 import hashlib
 from config.database import Database
+
 
 class UserModel:
     def __init__(self):
@@ -9,8 +11,24 @@ class UserModel:
 
     @staticmethod
     def hash_password(password):
-        # Mengubah plain text password menjadi hash SHA-256
+        # Mengubah password menjadi hash SHA-256
         return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+    def register_user(self, username, password, role):
+        if self.conn:
+            cursor = self.conn.cursor()
+
+            # Mengubah password menjadi hash
+            password_hash = self.hash_password(password)
+
+            # Menyimpan data pengguna ke database
+            query = f"INSERT INTO {self.table_name} (username, password, role) VALUES (%s, %s, %s)"
+            cursor.execute(query, (username, password_hash, role))
+            self.conn.commit()
+            cursor.close()
+            return True
+
+        return False
 
     def autentikasi(self, username, password):
         if self.conn:
@@ -18,10 +36,15 @@ class UserModel:
             password_hash = self.hash_password(password)
 
             # Parameterized Query untuk mencegah SQL Injection
-            query = f"SELECT id_user, username, role FROM {self.table_name} WHERE username = %s AND password = %s"
+            query = f"""
+                SELECT id_user, username, role
+                FROM {self.table_name}
+                WHERE username = %s AND password = %s
+            """
+
             cursor.execute(query, (username, password_hash))
             user = cursor.fetchone()
             cursor.close()
             return user
-        return None
 
+        return None
